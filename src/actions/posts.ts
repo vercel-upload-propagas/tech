@@ -103,7 +103,11 @@ export async function getPosts({
         totalPages: Math.ceil(total / limit),
       },
     };
-  } catch {
+  } catch (error) {
+    // Log temporário para diagnóstico na Vercel
+    if (process.env.VERCEL) {
+      console.error("Erro ao buscar posts:", error);
+    }
     return {
       posts: [],
       pagination: {
@@ -150,7 +154,11 @@ export async function getPostBySlug(slug: string): Promise<PostDetail | null> {
       }),
       image: post.coverImage,
     };
-  } catch {
+  } catch (error) {
+    // Log temporário para diagnóstico na Vercel
+    if (process.env.VERCEL) {
+      console.error("Erro ao buscar post por slug:", error);
+    }
     return null;
   }
 }

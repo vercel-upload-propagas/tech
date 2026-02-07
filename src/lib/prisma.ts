@@ -22,7 +22,15 @@ if (
 
 process.env.DATABASE_URL = databaseUrl;
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient();
+// Configuração para serverless (Vercel)
+const prismaOptions: ConstructorParameters<typeof PrismaClient>[0] = {};
+
+// Em produção/Vercel, desabilitar logs ou usar apenas erros
+if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
+  prismaOptions.log = ["error"];
+}
+
+export const prisma = globalForPrisma.prisma ?? new PrismaClient(prismaOptions);
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
