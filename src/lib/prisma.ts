@@ -6,13 +6,12 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL não está definida");
-}
-
 const pool = new Pool({
   connectionString:
     "postgresql://postgres:4860853Daro@@db.nyqwqtyhgczaxdsqltyu.supabase.co:5432/postgres",
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
 const adapter = new PrismaPg(pool);
 
