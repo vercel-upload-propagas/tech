@@ -10,6 +10,9 @@ import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
+// Tornar a página dinâmica para evitar erros durante o build
+export const dynamic = "force-dynamic";
+
 interface PostPageProps {
   params: Promise<{ slug: string }>;
 }

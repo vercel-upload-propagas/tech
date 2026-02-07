@@ -6,17 +6,33 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL não está definida");
+function createPrismaClient(): PrismaClient {
+  if (!process.env.DATABASE_URL) {
+    // Durante o build, se DATABASE_URL não estiver disponível,
+    // criar um cliente que nunca será usado (as funções verificam DATABASE_URL antes)
+    // Usamos uma URL dummy apenas para satisfazer o construtor do PrismaClient
+    const dummyPool = new Pool({
+      connectionString: "postgresql://dummy:dummy@localhost:5432/dummy",
+    });
+    const dummyAdapter = new PrismaPg(dummyPool);
+    return new PrismaClient({ adapter: dummyAdapter });
+  }
+
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const adapter = new PrismaPg(pool);
+
+  return (
+    globalForPrisma.prisma ??
+    new PrismaClient({
+      adapter,
+    })
+  );
 }
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
+const prismaInstance = createPrismaClient();
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    adapter,
-  });
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prismaInstance;
+}
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+export const prisma = prismaInstance;

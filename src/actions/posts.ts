@@ -45,6 +45,19 @@ export async function getPosts({
   search = "",
 }: GetPostsParams = {}): Promise<GetPostsResult> {
   try {
+    // Se DATABASE_URL não estiver disponível, retornar valores vazios (pode acontecer durante o build)
+    if (!process.env.DATABASE_URL) {
+      return {
+        posts: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+        },
+      };
+    }
+
     const skip = (page - 1) * limit;
 
     // Construir filtro de busca
@@ -105,12 +118,29 @@ export async function getPosts({
     };
   } catch (error) {
     console.error("Erro ao buscar posts:", error);
+    // Se DATABASE_URL não estiver disponível, retornar valores vazios em vez de lançar erro
+    if (!process.env.DATABASE_URL) {
+      return {
+        posts: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+        },
+      };
+    }
     throw new Error("Erro ao buscar posts");
   }
 }
 
 export async function getPostBySlug(slug: string): Promise<PostDetail | null> {
   try {
+    // Se DATABASE_URL não estiver disponível, retornar null (pode acontecer durante o build)
+    if (!process.env.DATABASE_URL) {
+      return null;
+    }
+
     const post = await prisma.post.findUnique({
       where: { slug },
       select: {
@@ -145,6 +175,10 @@ export async function getPostBySlug(slug: string): Promise<PostDetail | null> {
     };
   } catch (error) {
     console.error("Erro ao buscar post:", error);
+    // Se DATABASE_URL não estiver disponível, retornar null em vez de lançar erro
+    if (!process.env.DATABASE_URL) {
+      return null;
+    }
     throw new Error("Erro ao buscar post");
   }
 }
