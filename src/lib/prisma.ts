@@ -8,19 +8,10 @@ const globalForPrisma = globalThis as unknown as {
 let databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
-  // Para serverless (Vercel), usar connection pooler na porta 6543
+  // URL base do Supabase
   const baseUrl =
-    "postgresql://postgres:4860853Daro@@db.nyqwqtyhgczaxdsqltyu.supabase.co";
-  const port =
-    process.env.VERCEL || process.env.NODE_ENV === "production"
-      ? "6543"
-      : "5432";
-  databaseUrl = `${baseUrl}:${port}/postgres`;
-} else if (process.env.VERCEL || process.env.NODE_ENV === "production") {
-  // Se já tem DATABASE_URL mas está na Vercel, trocar porta 5432 por 6543 (pooler)
-  if (databaseUrl.includes(":5432/")) {
-    databaseUrl = databaseUrl.replace(":5432/", ":6543/");
-  }
+    "postgresql://postgres:4860853Daro@@db.nyqwqtyhgczaxdsqltyu.supabase.co:5432/postgres";
+  databaseUrl = baseUrl;
 }
 
 // Sempre adicionar SSL na Vercel/produção se não tiver
@@ -32,6 +23,12 @@ if (
 }
 
 process.env.DATABASE_URL = databaseUrl;
+
+// Log temporário para diagnóstico (apenas na Vercel)
+if (process.env.VERCEL) {
+  const urlForLog = databaseUrl.replace(/:[^:@]+@/, ":****@");
+  console.log("DATABASE_URL configurada:", urlForLog);
+}
 
 // Configuração para serverless (Vercel)
 const prismaOptions: ConstructorParameters<typeof PrismaClient>[0] = {};
