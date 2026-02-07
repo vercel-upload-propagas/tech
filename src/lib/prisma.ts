@@ -5,8 +5,16 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL =
+  const baseUrl =
     "postgresql://postgres:4860853Daro@@db.nyqwqtyhgczaxdsqltyu.supabase.co:5432/postgres";
+
+  // Adicionar SSL para Vercel/Supabase
+  const sslParam =
+    process.env.VERCEL || process.env.NODE_ENV === "production"
+      ? "?sslmode=require"
+      : "";
+
+  process.env.DATABASE_URL = `${baseUrl}${sslParam}`;
 }
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient();
