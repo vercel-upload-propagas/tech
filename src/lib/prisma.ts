@@ -8,10 +8,12 @@ const globalForPrisma = globalThis as unknown as {
 let databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
-  // URL base do Supabase
+  // Para Vercel, usar connection pooler (porta 6543) que é mais confiável para serverless
+  // URL do Supabase com connection pooler
   const baseUrl =
-    "postgresql://postgres:4860853Daro@@db.nyqwqtyhgczaxdsqltyu.supabase.co:5432/postgres";
-  databaseUrl = baseUrl;
+    "postgresql://postgres.nyqwqtyhgczaxdsqltyu:4860853Daro@@aws-1-sa-east-1.pooler.supabase.com:5432/postgres";
+  const port = process.env.VERCEL ? "6543" : "5432";
+  databaseUrl = `${baseUrl}:${port}/postgres`;
 }
 
 // Sempre adicionar SSL na Vercel/produção se não tiver
@@ -28,6 +30,8 @@ process.env.DATABASE_URL = databaseUrl;
 if (process.env.VERCEL) {
   const urlForLog = databaseUrl.replace(/:[^:@]+@/, ":****@");
   console.log("DATABASE_URL configurada:", urlForLog);
+  console.log("VERCEL env:", process.env.VERCEL);
+  console.log("NODE_ENV:", process.env.NODE_ENV);
 }
 
 // Configuração para serverless (Vercel)
