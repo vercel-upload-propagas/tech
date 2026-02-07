@@ -118,6 +118,17 @@ export async function getPosts({
     };
   } catch (error) {
     console.error("Erro ao buscar posts:", error);
+    // Log adicional para debug na Vercel
+    if (process.env.VERCEL) {
+      console.error(
+        "Erro na Vercel - DATABASE_URL existe:",
+        !!process.env.DATABASE_URL
+      );
+      console.error(
+        "Erro na Vercel - Tipo do erro:",
+        error instanceof Error ? error.message : String(error)
+      );
+    }
     // Durante o build, retornar valores vazios em vez de lançar erro
     if (process.env.NEXT_PHASE === "phase-production-build") {
       return {
@@ -131,7 +142,7 @@ export async function getPosts({
       };
     }
     // Em produção, logar o erro mas retornar valores vazios para não quebrar a aplicação
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
       console.error("Erro ao buscar posts em produção:", error);
       return {
         posts: [],
@@ -188,12 +199,23 @@ export async function getPostBySlug(slug: string): Promise<PostDetail | null> {
     };
   } catch (error) {
     console.error("Erro ao buscar post:", error);
+    // Log adicional para debug na Vercel
+    if (process.env.VERCEL) {
+      console.error(
+        "Erro na Vercel - DATABASE_URL existe:",
+        !!process.env.DATABASE_URL
+      );
+      console.error(
+        "Erro na Vercel - Tipo do erro:",
+        error instanceof Error ? error.message : String(error)
+      );
+    }
     // Durante o build, retornar null em vez de lançar erro
     if (process.env.NEXT_PHASE === "phase-production-build") {
       return null;
     }
     // Em produção, logar o erro mas retornar null para não quebrar a aplicação
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
       console.error("Erro ao buscar post em produção:", error);
       return null;
     }
