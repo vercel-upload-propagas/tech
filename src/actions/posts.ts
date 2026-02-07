@@ -45,8 +45,8 @@ export async function getPosts({
   search = "",
 }: GetPostsParams = {}): Promise<GetPostsResult> {
   try {
-    // Se DATABASE_URL não estiver disponível, retornar valores vazios (pode acontecer durante o build)
-    if (!process.env.DATABASE_URL) {
+    // Durante o build, retornar valores vazios
+    if (process.env.NEXT_PHASE === "phase-production-build") {
       return {
         posts: [],
         pagination: {
@@ -118,8 +118,21 @@ export async function getPosts({
     };
   } catch (error) {
     console.error("Erro ao buscar posts:", error);
-    // Se DATABASE_URL não estiver disponível, retornar valores vazios em vez de lançar erro
-    if (!process.env.DATABASE_URL) {
+    // Durante o build, retornar valores vazios em vez de lançar erro
+    if (process.env.NEXT_PHASE === "phase-production-build") {
+      return {
+        posts: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+        },
+      };
+    }
+    // Em produção, logar o erro mas retornar valores vazios para não quebrar a aplicação
+    if (process.env.NODE_ENV === "production") {
+      console.error("Erro ao buscar posts em produção:", error);
       return {
         posts: [],
         pagination: {
@@ -136,8 +149,8 @@ export async function getPosts({
 
 export async function getPostBySlug(slug: string): Promise<PostDetail | null> {
   try {
-    // Se DATABASE_URL não estiver disponível, retornar null (pode acontecer durante o build)
-    if (!process.env.DATABASE_URL) {
+    // Durante o build, retornar null
+    if (process.env.NEXT_PHASE === "phase-production-build") {
       return null;
     }
 
@@ -175,8 +188,13 @@ export async function getPostBySlug(slug: string): Promise<PostDetail | null> {
     };
   } catch (error) {
     console.error("Erro ao buscar post:", error);
-    // Se DATABASE_URL não estiver disponível, retornar null em vez de lançar erro
-    if (!process.env.DATABASE_URL) {
+    // Durante o build, retornar null em vez de lançar erro
+    if (process.env.NEXT_PHASE === "phase-production-build") {
+      return null;
+    }
+    // Em produção, logar o erro mas retornar null para não quebrar a aplicação
+    if (process.env.NODE_ENV === "production") {
+      console.error("Erro ao buscar post em produção:", error);
       return null;
     }
     throw new Error("Erro ao buscar post");

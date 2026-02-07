@@ -6,7 +6,7 @@ import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { PostsGrid } from "@/components/posts-grid";
 
-const POSTS_PER_PAGE = 6;
+const POSTS_PER_PAGE = 12;
 
 export const metadata: Metadata = {
   title: "Home",
