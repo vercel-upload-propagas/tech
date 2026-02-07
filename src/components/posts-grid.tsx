@@ -1,9 +1,8 @@
 "use client";
 
-import { PostCard } from "@/components/post-card";
-import { Pagination } from "@/components/pagination";
-
 import type { PostListItem } from "@/actions/posts";
+import { Pagination } from "@/components/pagination";
+import { PostCard } from "@/components/post-card";
 
 interface PostsGridProps {
   posts: PostListItem[];

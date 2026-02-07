@@ -14,7 +14,7 @@ interface PostCardProps {
   id: string;
   title: string;
   description: string;
-  readTime: string;
+  readTime: number;
   date: string;
   image: string;
   href?: string;
