@@ -20,48 +20,69 @@ function createPrismaClient(): PrismaClient {
       const dummyAdapter = new PrismaPg(dummyPool);
       return new PrismaClient({ adapter: dummyAdapter });
     }
-    throw new Error("DATABASE_URL não está definida");
-  }
-
-  // Verificar se já existe um pool reutilizável (para desenvolvimento)
-  const existingPool = globalForPrisma.pool;
-
-  // Configurar o Pool com opções adequadas para serverless (Vercel)
-  const pool =
-    existingPool ??
-    new Pool({
-      connectionString: process.env.DATABASE_URL,
-      // Configurações para serverless/Vercel
-      ssl:
-        process.env.NODE_ENV === "production" || process.env.VERCEL === "1"
-          ? { rejectUnauthorized: false }
-          : undefined,
-      // Configurações otimizadas para serverless
-      max: process.env.VERCEL ? 1 : 10, // Em serverless, usar apenas 1 conexão
-      min: 0,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 20000, // Aumentar timeout para Vercel
-      // Permitir que conexões sejam fechadas rapidamente em ambientes serverless
-      allowExitOnIdle: true,
+    // Em runtime sem DATABASE_URL, ainda criar um cliente para evitar erros de importação
+    // As funções que usam o Prisma devem verificar DATABASE_URL antes de usar
+    console.warn(
+      "DATABASE_URL não está definida - algumas funcionalidades podem não funcionar"
+    );
+    const dummyPool = new Pool({
+      connectionString: "postgresql://dummy:dummy@localhost:5432/dummy",
     });
-
-  // Armazenar o pool globalmente apenas em desenvolvimento
-  if (process.env.NODE_ENV !== "production" && !globalForPrisma.pool) {
-    globalForPrisma.pool = pool;
+    const dummyAdapter = new PrismaPg(dummyPool);
+    return new PrismaClient({ adapter: dummyAdapter });
   }
 
-  const adapter = new PrismaPg(pool);
+  try {
+    // Verificar se já existe um pool reutilizável (para desenvolvimento)
+    const existingPool = globalForPrisma.pool;
 
-  return (
-    globalForPrisma.prisma ??
-    new PrismaClient({
-      adapter,
-      log:
-        process.env.NODE_ENV === "development"
-          ? ["query", "error", "warn"]
-          : ["error"],
-    })
-  );
+    // Configurar o Pool com opções adequadas para serverless (Vercel)
+    const pool =
+      existingPool ??
+      new Pool({
+        connectionString: process.env.DATABASE_URL,
+        // Configurações para serverless/Vercel
+        ssl:
+          process.env.NODE_ENV === "production" || process.env.VERCEL === "1"
+            ? { rejectUnauthorized: false }
+            : undefined,
+        // Configurações otimizadas para serverless
+        max: process.env.VERCEL ? 1 : 10, // Em serverless, usar apenas 1 conexão
+        min: 0,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 20000, // Aumentar timeout para Vercel
+        // Permitir que conexões sejam fechadas rapidamente em ambientes serverless
+        allowExitOnIdle: true,
+      });
+
+    // Armazenar o pool globalmente apenas em desenvolvimento
+    if (process.env.NODE_ENV !== "production" && !globalForPrisma.pool) {
+      globalForPrisma.pool = pool;
+    }
+
+    const adapter = new PrismaPg(pool);
+
+    return (
+      globalForPrisma.prisma ??
+      new PrismaClient({
+        adapter,
+        log:
+          process.env.NODE_ENV === "development"
+            ? ["query", "error", "warn"]
+            : ["error"],
+      })
+    );
+  } catch (error) {
+    console.error("Erro ao criar cliente Prisma:", error);
+    // Se houver erro na criação, tentar criar um cliente básico
+    // Isso pode não funcionar, mas evita que a aplicação quebre na inicialização
+    return (
+      globalForPrisma.prisma ??
+      new PrismaClient({
+        log: ["error"],
+      })
+    );
+  }
 }
 
 const prismaInstance = createPrismaClient();

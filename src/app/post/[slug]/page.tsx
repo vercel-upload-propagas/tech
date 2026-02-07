@@ -20,45 +20,54 @@ interface PostPageProps {
 export async function generateMetadata({
   params,
 }: PostPageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const post = await getPostBySlug(slug);
+  try {
+    const { slug } = await params;
+    const post = await getPostBySlug(slug);
 
-  if (!post) {
+    if (!post) {
+      return {
+        title: "Post não encontrado",
+      };
+    }
+
+    const url = `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/post/${slug}`;
+
     return {
-      title: "Post não encontrado",
+      title: post.title,
+      description: post.description,
+      openGraph: {
+        title: post.title,
+        description: post.description,
+        url,
+        type: "article",
+        publishedTime: post.date,
+        images: [
+          {
+            url: post.image,
+            width: 1200,
+            height: 630,
+            alt: post.title,
+          },
+        ],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: post.title,
+        description: post.description,
+        images: [post.image],
+      },
+      alternates: {
+        canonical: url,
+      },
+    };
+  } catch (error) {
+    console.error("Erro ao gerar metadados:", error);
+    // Retornar metadados básicos em caso de erro
+    return {
+      title: "Erro ao carregar post",
+      description: "Ocorreu um erro ao carregar o post",
     };
   }
-
-  const url = `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/post/${slug}`;
-
-  return {
-    title: post.title,
-    description: post.description,
-    openGraph: {
-      title: post.title,
-      description: post.description,
-      url,
-      type: "article",
-      publishedTime: post.date,
-      images: [
-        {
-          url: post.image,
-          width: 1200,
-          height: 630,
-          alt: post.title,
-        },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: post.title,
-      description: post.description,
-      images: [post.image],
-    },
-    alternates: {
-      canonical: url,
-    },
-  };
 }
 
 export default async function PostPage({ params }: PostPageProps) {

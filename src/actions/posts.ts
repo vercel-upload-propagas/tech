@@ -58,6 +58,22 @@ export async function getPosts({
       };
     }
 
+    // Verificar se DATABASE_URL está disponível antes de usar o Prisma
+    if (!process.env.DATABASE_URL) {
+      console.warn(
+        "DATABASE_URL não está disponível - retornando valores vazios"
+      );
+      return {
+        posts: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+        },
+      };
+    }
+
     const skip = (page - 1) * limit;
 
     // Construir filtro de busca
@@ -162,6 +178,12 @@ export async function getPostBySlug(slug: string): Promise<PostDetail | null> {
   try {
     // Durante o build, retornar null
     if (process.env.NEXT_PHASE === "phase-production-build") {
+      return null;
+    }
+
+    // Verificar se DATABASE_URL está disponível antes de usar o Prisma
+    if (!process.env.DATABASE_URL) {
+      console.warn("DATABASE_URL não está disponível - retornando null");
       return null;
     }
 

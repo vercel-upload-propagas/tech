@@ -34,20 +34,33 @@ async function PostsContent({
   page: number;
   search: string;
 }) {
-  const { posts, pagination } = await getPosts({
-    page,
-    limit: POSTS_PER_PAGE,
-    search,
-  });
+  try {
+    const { posts, pagination } = await getPosts({
+      page,
+      limit: POSTS_PER_PAGE,
+      search,
+    });
 
-  return (
-    <PostsGrid
-      posts={posts}
-      currentPage={pagination.page}
-      totalPages={pagination.totalPages}
-      searchQuery={search}
-    />
-  );
+    return (
+      <PostsGrid
+        posts={posts}
+        currentPage={pagination.page}
+        totalPages={pagination.totalPages}
+        searchQuery={search}
+      />
+    );
+  } catch (error) {
+    console.error("Erro ao carregar posts:", error);
+    // Retornar grid vazio em caso de erro
+    return (
+      <PostsGrid
+        posts={[]}
+        currentPage={1}
+        totalPages={0}
+        searchQuery={search}
+      />
+    );
+  }
 }
 
 function StructuredData() {
