@@ -45,35 +45,6 @@ export async function getPosts({
   search = "",
 }: GetPostsParams = {}): Promise<GetPostsResult> {
   try {
-    // Durante o build, retornar valores vazios
-    if (process.env.NEXT_PHASE === "phase-production-build") {
-      return {
-        posts: [],
-        pagination: {
-          page,
-          limit,
-          total: 0,
-          totalPages: 0,
-        },
-      };
-    }
-
-    // Verificar se DATABASE_URL está disponível antes de usar o Prisma
-    if (!process.env.DATABASE_URL) {
-      console.warn(
-        "DATABASE_URL não está disponível - retornando valores vazios"
-      );
-      return {
-        posts: [],
-        pagination: {
-          page,
-          limit,
-          total: 0,
-          totalPages: 0,
-        },
-      };
-    }
-
     const skip = (page - 1) * limit;
 
     // Construir filtro de busca
@@ -132,61 +103,21 @@ export async function getPosts({
         totalPages: Math.ceil(total / limit),
       },
     };
-  } catch (error) {
-    console.error("Erro ao buscar posts:", error);
-    // Log adicional para debug na Vercel
-    if (process.env.VERCEL) {
-      console.error(
-        "Erro na Vercel - DATABASE_URL existe:",
-        !!process.env.DATABASE_URL
-      );
-      console.error(
-        "Erro na Vercel - Tipo do erro:",
-        error instanceof Error ? error.message : String(error)
-      );
-    }
-    // Durante o build, retornar valores vazios em vez de lançar erro
-    if (process.env.NEXT_PHASE === "phase-production-build") {
-      return {
-        posts: [],
-        pagination: {
-          page,
-          limit,
-          total: 0,
-          totalPages: 0,
-        },
-      };
-    }
-    // Em produção, logar o erro mas retornar valores vazios para não quebrar a aplicação
-    if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
-      console.error("Erro ao buscar posts em produção:", error);
-      return {
-        posts: [],
-        pagination: {
-          page,
-          limit,
-          total: 0,
-          totalPages: 0,
-        },
-      };
-    }
-    throw new Error("Erro ao buscar posts");
+  } catch {
+    return {
+      posts: [],
+      pagination: {
+        page,
+        limit,
+        total: 0,
+        totalPages: 0,
+      },
+    };
   }
 }
 
 export async function getPostBySlug(slug: string): Promise<PostDetail | null> {
   try {
-    // Durante o build, retornar null
-    if (process.env.NEXT_PHASE === "phase-production-build") {
-      return null;
-    }
-
-    // Verificar se DATABASE_URL está disponível antes de usar o Prisma
-    if (!process.env.DATABASE_URL) {
-      console.warn("DATABASE_URL não está disponível - retornando null");
-      return null;
-    }
-
     const post = await prisma.post.findUnique({
       where: { slug },
       select: {
@@ -219,28 +150,7 @@ export async function getPostBySlug(slug: string): Promise<PostDetail | null> {
       }),
       image: post.coverImage,
     };
-  } catch (error) {
-    console.error("Erro ao buscar post:", error);
-    // Log adicional para debug na Vercel
-    if (process.env.VERCEL) {
-      console.error(
-        "Erro na Vercel - DATABASE_URL existe:",
-        !!process.env.DATABASE_URL
-      );
-      console.error(
-        "Erro na Vercel - Tipo do erro:",
-        error instanceof Error ? error.message : String(error)
-      );
-    }
-    // Durante o build, retornar null em vez de lançar erro
-    if (process.env.NEXT_PHASE === "phase-production-build") {
-      return null;
-    }
-    // Em produção, logar o erro mas retornar null para não quebrar a aplicação
-    if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
-      console.error("Erro ao buscar post em produção:", error);
-      return null;
-    }
-    throw new Error("Erro ao buscar post");
+  } catch {
+    return null;
   }
 }
