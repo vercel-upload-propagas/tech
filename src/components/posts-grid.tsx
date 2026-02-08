@@ -55,6 +55,7 @@ export function PostsGrid({
               readTime={post.readTime}
               date={post.date}
               image={post.image}
+              categories={post.categories}
               href={`/post/${post.slug}`}
             />
           </div>

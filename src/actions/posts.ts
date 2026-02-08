@@ -10,6 +10,7 @@ export interface PostListItem {
   readTime: number;
   date: string;
   image: string;
+  categories: string[];
 }
 
 export interface PostDetail {
@@ -27,6 +28,7 @@ export interface GetPostsParams {
   page?: number;
   limit?: number;
   search?: string;
+  category?: string;
 }
 
 export interface GetPostsResult {
@@ -39,16 +41,34 @@ export interface GetPostsResult {
   };
 }
 
+export async function getCategories(): Promise<string[]> {
+  try {
+    const categories = await prisma.category.findMany({
+      select: {
+        name: true,
+      },
+      orderBy: {
+        name: "asc",
+      },
+    });
+
+    return categories.map((cat) => cat.name);
+  } catch {
+    return [];
+  }
+}
+
 export async function getPosts({
   page = 1,
   limit = 6,
   search = "",
+  category = "",
 }: GetPostsParams = {}): Promise<GetPostsResult> {
   try {
     const skip = (page - 1) * limit;
 
     // Construir filtro de busca
-    const where = search
+    const searchFilter = search
       ? {
           OR: [
             { title: { contains: search, mode: "insensitive" as const } },
@@ -58,6 +78,25 @@ export async function getPosts({
           ],
         }
       : {};
+
+    // Construir filtro de categoria
+    const categoryFilter = category
+      ? {
+          categories: {
+            some: {
+              category: {
+                name: category,
+              },
+            },
+          },
+        }
+      : {};
+
+    // Combinar filtros
+    const where = {
+      ...searchFilter,
+      ...categoryFilter,
+    };
 
     // Buscar posts e total
     const [posts, total] = await Promise.all([
@@ -74,6 +113,15 @@ export async function getPosts({
           coverImage: true,
           readTime: true,
           createdAt: true,
+          categories: {
+            select: {
+              category: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
         },
       }),
       prisma.post.count({ where }),
@@ -92,6 +140,7 @@ export async function getPosts({
         year: "numeric",
       }),
       image: post.coverImage,
+      categories: post.categories.map((pc) => pc.category.name),
     }));
 
     return {

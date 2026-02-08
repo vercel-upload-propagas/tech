@@ -17,6 +17,7 @@ interface PostCardProps {
   readTime: number;
   date: string;
   image: string;
+  categories?: string[];
   href?: string;
 }
 
@@ -26,6 +27,7 @@ export function PostCard({
   readTime,
   date,
   image,
+  categories = [],
   href = "#",
 }: PostCardProps) {
   return (
@@ -49,13 +51,25 @@ export function PostCard({
           <div className="mb-2 flex items-center gap-3 text-xs text-muted-foreground">
             <time dateTime={date} className="flex items-center gap-1">
               <span aria-hidden="true">⏱</span>
-              <span>{readTime}</span>
+              <span>{readTime / 60}m</span>
             </time>
             <span aria-hidden="true" className="text-muted-foreground/50">
               •
             </span>
             <time dateTime={date}>{date}</time>
           </div>
+          {categories.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-1">
+              {categories.map((category) => (
+                <span
+                  key={category}
+                  className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary"
+                >
+                  {category}
+                </span>
+              ))}
+            </div>
+          )}
           <CardTitle className="line-clamp-2 transition-colors group-hover:text-primary">
             {title}
           </CardTitle>

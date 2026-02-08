@@ -2,11 +2,27 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { getPosts } from "@/actions/posts";
+import { CategoryFilter } from "@/components/category-filter";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { PostsGrid } from "@/components/posts-grid";
 
 const POSTS_PER_PAGE = 12;
+
+const CATEGORIES = [
+  "WhatsApp",
+  "Instagram",
+  "Facebook",
+  "Twitter",
+  "LinkedIn",
+  "YouTube",
+  "TikTok",
+  "Snapchat",
+  "Pinterest",
+  "Reddit",
+  "Discord",
+  "Telegram",
+];
 
 export const metadata: Metadata = {
   title: "Home",
@@ -24,21 +40,24 @@ export const metadata: Metadata = {
 };
 
 interface HomeProps {
-  searchParams: Promise<{ page?: string; search?: string }>;
+  searchParams: Promise<{ page?: string; search?: string; category?: string }>;
 }
 
 async function PostsContent({
   page,
   search,
+  category,
 }: {
   page: number;
   search: string;
+  category: string;
 }) {
   try {
     const { posts, pagination } = await getPosts({
       page,
       limit: POSTS_PER_PAGE,
       search,
+      category,
     });
 
     return (
@@ -93,6 +112,7 @@ export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams;
   const currentPage = Number(params.page) || 1;
   const searchQuery = params.search || "";
+  const categoryFilter = params.category || "";
 
   return (
     <>
@@ -128,6 +148,10 @@ export default async function Home({ searchParams }: HomeProps) {
             aria-label="Lista de tutoriais"
           >
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+              <CategoryFilter
+                categories={CATEGORIES}
+                selectedCategory={categoryFilter}
+              />
               <Suspense
                 fallback={
                   <div
@@ -141,7 +165,11 @@ export default async function Home({ searchParams }: HomeProps) {
                   </div>
                 }
               >
-                <PostsContent page={currentPage} search={searchQuery} />
+                <PostsContent
+                  page={currentPage}
+                  search={searchQuery}
+                  category={categoryFilter}
+                />
               </Suspense>
             </div>
           </section>

@@ -19,5 +19,27 @@ model Post {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  categories PostCategory[]
+
   @@map("posts")
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+
+  posts PostCategory[]
+
+  @@map("categories")
+}
+
+model PostCategory {
+  id          String   @id @default(uuid())
+  postId      String
+  categoryId  String
+
+  post Post @relation(fields: [postId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@map("post_categories")
 }

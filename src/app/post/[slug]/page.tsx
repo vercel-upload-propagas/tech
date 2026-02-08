@@ -150,7 +150,7 @@ export default async function PostPage({ params }: PostPageProps) {
                         className="flex items-center gap-1"
                       >
                         <span aria-hidden="true">⏱</span>
-                        <span>{post.readTime}</span>
+                        <span>{post.readTime / 60}m</span>
                       </time>
                       <span
                         aria-hidden="true"
