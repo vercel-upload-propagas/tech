@@ -1,45 +1,136 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-model Post {
-  id          String   @id @default(uuid())
-  title       String
-  slug        String   @unique
+
+model User {
+  id        String   @id @default(uuid())
+  login     String   @unique
+  password  String
+
+  @@map("users")
+}
+
+model Website {
+  id        String   @id @default(uuid())
+  name      String
+  websiteUrl String   @unique
+  subject    String
   description String
-  content     String
-  coverImage  String
-  readTime    Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  dateCreated DateTime @default(now())
+  dateUpdated DateTime @updatedAt
 
-  categories PostCategory[]
+  categories        Category[]
+  posts             Post[]
+  contentGenerations ContentGeneration[]
 
-  @@map("posts")
+  @@map("websites")
 }
 
 model Category {
-  id          String   @id @default(uuid())
-  name        String   @unique
+  id        String   @id @default(uuid())
+  name      String
 
-  posts PostCategory[]
+  websiteId String
+  website Website @relation(fields: [websiteId], references: [id])
 
+  postCategories PostCategory[]
+
+  @@unique([name, websiteId])
   @@map("categories")
 }
 
+model Post {
+  id        String   @id @default(uuid())
+  title     String
+  slug      String
+  description String
+  content   String
+  coverImage String
+  readTime  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  websiteId String
+  website   Website @relation(fields: [websiteId], references: [id])
+
+  postCategories PostCategory[]
+  contentGenerationApproved ContentGeneration? @relation("ContentGenerationApprovedPost")
+
+  @@unique([slug, websiteId])
+  @@map("posts")
+}
+
 model PostCategory {
-  id          String   @id @default(uuid())
-  postId      String
-  categoryId  String
+  id        String   @id @default(uuid())
 
-  post Post @relation(fields: [postId], references: [id])
-  category Category @relation(fields: [categoryId], references: [id])
+  postId String
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
+  categoryId String
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, categoryId])
   @@map("post_categories")
+}
+
+model ApiProvider {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  provider  String
+  baseUrl   String
+  apiKey    String
+  model     String
+  defaultPrompt String @default("")
+  defaultTemperature Float
+  defaultMaxTokens Int
+  defaultTopP Float
+  defaultFrequencyPenalty Float
+  defaultPresencePenalty Float
+  dateCreated DateTime @default(now())
+  dateUpdated DateTime @updatedAt
+
+  @@map("api_providers")
+}
+
+enum ContentGenerationStatus {
+  PENDING
+  GENERATING
+  COMPLETED
+  FAILED
+}
+
+model ContentGeneration {
+  id              String                    @id @default(uuid())
+  userId          String
+  websiteId       String
+  apiProviderId   String
+  prompt          String                    @db.Text
+  categoryIds     String[]
+  status          ContentGenerationStatus   @default(PENDING)
+  title           String?
+  description     String?                   @db.Text
+  content         String?                   @db.Text
+  coverImage      String?
+  readTime        Int                       @default(0)
+  errorMessage    String?                   @db.Text
+  approvedPostId  String?                   @unique
+  dateCreated     DateTime                 @default(now())
+  dateUpdated     DateTime                 @updatedAt
+
+  website         Website                  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  approvedPost    Post?                    @relation("ContentGenerationApprovedPost", fields: [approvedPostId], references: [id])
+
+  @@map("content_generations")
 }

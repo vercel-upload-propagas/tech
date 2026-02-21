@@ -2,6 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 
+const WEBSITE_ID = process.env.WEBSITE_ID || "";
+
 export interface PostListItem {
   id: string;
   title: string;
@@ -44,6 +46,9 @@ export interface GetPostsResult {
 export async function getCategories(): Promise<string[]> {
   try {
     const categories = await prisma.category.findMany({
+      where: {
+        websiteId: WEBSITE_ID,
+      },
       select: {
         name: true,
       },
@@ -82,10 +87,14 @@ export async function getPosts({
     // Construir filtro de categoria
     const categoryFilter = category
       ? {
-          categories: {
+          postCategories: {
             some: {
               category: {
-                name: category,
+                name: {
+                  equals: category,
+                  mode: "insensitive" as const,
+                },
+                websiteId: WEBSITE_ID,
               },
             },
           },
@@ -94,6 +103,7 @@ export async function getPosts({
 
     // Combinar filtros
     const where = {
+      websiteId: WEBSITE_ID,
       ...searchFilter,
       ...categoryFilter,
     };
@@ -113,7 +123,7 @@ export async function getPosts({
           coverImage: true,
           readTime: true,
           createdAt: true,
-          categories: {
+          postCategories: {
             select: {
               category: {
                 select: {
@@ -140,7 +150,7 @@ export async function getPosts({
         year: "numeric",
       }),
       image: post.coverImage,
-      categories: post.categories.map((pc) => pc.category.name),
+      categories: post.postCategories.map((pc) => pc.category.name),
     }));
 
     return {
@@ -171,8 +181,11 @@ export async function getPosts({
 
 export async function getPostBySlug(slug: string): Promise<PostDetail | null> {
   try {
-    const post = await prisma.post.findUnique({
-      where: { slug },
+    const post = await prisma.post.findFirst({
+      where: {
+        slug,
+        websiteId: WEBSITE_ID,
+      },
       select: {
         id: true,
         title: true,

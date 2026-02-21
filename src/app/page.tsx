@@ -1,28 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { getPosts } from "@/actions/posts";
+import { getCategories, getPosts } from "@/actions/posts";
 import { CategoryFilter } from "@/components/category-filter";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { PostsGrid } from "@/components/posts-grid";
 
 const POSTS_PER_PAGE = 12;
-
-const CATEGORIES = [
-  "WhatsApp",
-  "Instagram",
-  "Facebook",
-  "Twitter",
-  "LinkedIn",
-  "YouTube",
-  "TikTok",
-  "Snapchat",
-  "Pinterest",
-  "Reddit",
-  "Discord",
-  "Telegram",
-];
 
 export const metadata: Metadata = {
   title: "Home",
@@ -114,6 +99,8 @@ export default async function Home({ searchParams }: HomeProps) {
   const searchQuery = params.search || "";
   const categoryFilter = params.category || "";
 
+  const categories = await getCategories();
+
   return (
     <>
       <StructuredData />
@@ -149,7 +136,7 @@ export default async function Home({ searchParams }: HomeProps) {
           >
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
               <CategoryFilter
-                categories={CATEGORIES}
+                categories={categories}
                 selectedCategory={categoryFilter}
               />
               <Suspense
