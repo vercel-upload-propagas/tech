@@ -4,6 +4,12 @@ import { prisma } from "@/lib/prisma";
 
 const WEBSITE_ID = process.env.WEBSITE_ID || "";
 
+// Log de diagnóstico na Vercel
+if (process.env.VERCEL) {
+  console.log("WEBSITE_ID:", WEBSITE_ID || "NÃO DEFINIDO");
+  console.log("WEBSITE_ID length:", WEBSITE_ID.length);
+}
+
 export interface PostListItem {
   id: string;
   title: string;
@@ -45,6 +51,13 @@ export interface GetPostsResult {
 
 export async function getCategories(): Promise<string[]> {
   try {
+    if (!WEBSITE_ID) {
+      if (process.env.VERCEL) {
+        console.error("WEBSITE_ID não está definido ao buscar categorias");
+      }
+      return [];
+    }
+
     const categories = await prisma.category.findMany({
       where: {
         websiteId: WEBSITE_ID,
@@ -57,8 +70,17 @@ export async function getCategories(): Promise<string[]> {
       },
     });
 
+    if (process.env.VERCEL) {
+      console.log(
+        `Encontradas ${categories.length} categorias para website ${WEBSITE_ID}`
+      );
+    }
+
     return categories.map((cat) => cat.name);
-  } catch {
+  } catch (error) {
+    if (process.env.VERCEL) {
+      console.error("Erro ao buscar categorias:", error);
+    }
     return [];
   }
 }
@@ -70,6 +92,24 @@ export async function getPosts({
   category = "",
 }: GetPostsParams = {}): Promise<GetPostsResult> {
   try {
+    // Validação do WEBSITE_ID
+    if (!WEBSITE_ID) {
+      if (process.env.VERCEL) {
+        console.error(
+          "WEBSITE_ID não está definido nas variáveis de ambiente da Vercel"
+        );
+      }
+      return {
+        posts: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+        },
+      };
+    }
+
     const skip = (page - 1) * limit;
 
     // Construir filtro de busca
@@ -107,6 +147,15 @@ export async function getPosts({
       ...searchFilter,
       ...categoryFilter,
     };
+
+    // Log de diagnóstico na Vercel
+    if (process.env.VERCEL) {
+      console.log("Buscando posts com filtros:", {
+        websiteId: WEBSITE_ID,
+        search: search || "vazio",
+        category: category || "vazio",
+      });
+    }
 
     // Buscar posts e total
     const [posts, total] = await Promise.all([
@@ -163,9 +212,14 @@ export async function getPosts({
       },
     };
   } catch (error) {
-    // Log temporário para diagnóstico na Vercel
+    // Log detalhado para diagnóstico na Vercel
     if (process.env.VERCEL) {
       console.error("Erro ao buscar posts:", error);
+      console.error("WEBSITE_ID usado:", WEBSITE_ID);
+      console.error(
+        "Stack trace:",
+        error instanceof Error ? error.stack : "N/A"
+      );
     }
     return {
       posts: [],
