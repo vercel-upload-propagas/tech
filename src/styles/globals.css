@@ -120,6 +120,11 @@
     @apply border-border outline-ring/50;
   }
 
+  /* Acessibilidade: foco visível em links para navegação por teclado */
+  a:focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+
   body {
     @apply min-h-screen bg-background text-foreground font-sans antialiased;
     font-feature-settings:

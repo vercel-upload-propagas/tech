@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -8,9 +9,11 @@ import { Input } from "@/components/ui/input";
 
 export function Header() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const urlSearchQuery = searchParams.get("search") || "";
   const [searchQuery, setSearchQuery] = useState(urlSearchQuery);
+  const isPostPage = pathname?.startsWith("/post/");
 
   const handleSearch = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -31,9 +34,20 @@ export function Header() {
       role="banner"
     >
       <div className="container mx-auto flex h-16 items-center gap-4 px-4 sm:px-6 lg:px-8">
+        {isPostPage && (
+          <Button variant="ghost" size="sm" asChild className="shrink-0">
+            <Link
+              href="/"
+              className="focus:rounded focus:outline-none focus:ring-2 focus:ring-primary"
+              aria-label="Voltar para a página inicial"
+            >
+              ← Voltar
+            </Link>
+          </Button>
+        )}
         <a
           href="/"
-          className="text-xl font-bold text-foreground transition-colors hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-sm"
+          className="text-xl font-bold text-foreground transition-colors hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-sm shrink-0"
           aria-label="Tech Blog - Ir para página inicial"
         >
           Tech Blog
@@ -62,7 +76,10 @@ export function Header() {
         </form>
         <nav aria-label="Navegação principal">
           <Button variant="ghost" size="sm" asChild>
-            <a href="#sobre" aria-label="Ir para seção sobre">
+            <a
+              href="/sobre"
+              className="focus:rounded focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            >
               Sobre
             </a>
           </Button>

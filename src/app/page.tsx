@@ -5,6 +5,7 @@ import { getPostsAction } from "@/actions/posts";
 import { CategoryFilter } from "@/components/category-filter";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
+import { PaginationLinks } from "@/components/pagination-links";
 import { PostsSectionClient } from "@/components/posts-section-client";
 
 const POSTS_PER_PAGE = 12;
@@ -16,20 +17,60 @@ function normalizeCategoryParam(
   return Array.isArray(category) ? category : [category];
 }
 
-export const metadata: Metadata = {
-  title: "Home",
-  description:
-    "Aprenda como fazer qualquer coisa relacionada a tecnologia. Tutoriais práticos e passo a passo sobre aplicativos, ferramentas digitais e desenvolvimento.",
-  openGraph: {
-    title: "Tech Blog - Tutoriais Práticos de Tecnologia",
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+function buildCanonicalUrl(params: {
+  page?: string;
+  search?: string;
+  category?: string | string[];
+}): string {
+  const search = new URLSearchParams();
+  if (params.page && params.page !== "1") search.set("page", params.page);
+  if (params.search) search.set("search", params.search);
+  if (params.category) {
+    const cats = Array.isArray(params.category)
+      ? params.category
+      : [params.category];
+    cats.forEach((c) => search.append("category", c));
+  }
+  const q = search.toString();
+  return q ? `${siteUrl}/?${q}` : siteUrl;
+}
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    page?: string;
+    search?: string;
+    category?: string | string[];
+  }>;
+}): Promise<Metadata> {
+  const params = await searchParams;
+  const canonical = buildCanonicalUrl(params);
+
+  return {
+    title: "Home",
     description:
-      "Aprenda como fazer qualquer coisa relacionada a tecnologia. Tutoriais práticos e passo a passo.",
-    url: "/",
-  },
-  alternates: {
-    canonical: "/",
-  },
-};
+      "Aprenda como fazer qualquer coisa relacionada a tecnologia. Tutoriais práticos e passo a passo sobre aplicativos, ferramentas digitais e desenvolvimento.",
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true },
+    },
+    openGraph: {
+      title: "Tech Blog - Tutoriais Práticos de Tecnologia",
+      description:
+        "Aprenda como fazer qualquer coisa relacionada a tecnologia. Tutoriais práticos e passo a passo.",
+      url: canonical,
+      type: "website",
+      locale: "pt_BR",
+    },
+    alternates: {
+      canonical,
+    },
+  };
+}
 
 interface HomeProps {
   searchParams: Promise<{
@@ -37,32 +78,6 @@ interface HomeProps {
     search?: string;
     category?: string | string[];
   }>;
-}
-
-function StructuredData() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: "Tech Blog",
-    description:
-      "Aprenda como fazer qualquer coisa relacionada a tecnologia. Tutoriais práticos e passo a passo.",
-    url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/?search={search_term_string}`,
-      },
-      "query-input": "required name=search_term_string",
-    },
-  };
-
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-    />
-  );
 }
 
 export default async function Home({ searchParams }: HomeProps) {
@@ -87,13 +102,54 @@ export default async function Home({ searchParams }: HomeProps) {
     [...categoryIds].sort().join(","),
   ].join("|");
 
+  const totalPages = initialPosts.totalPages;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${siteUrl}/#website`,
+    name: "Tech Blog",
+    description:
+      "Aprenda como fazer qualquer coisa relacionada a tecnologia. Tutoriais práticos e passo a passo.",
+    url: siteUrl,
+    inLanguage: "pt-BR",
+    publisher: {
+      "@type": "Organization",
+      name: "Tech Blog",
+      url: siteUrl,
+    },
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${siteUrl}/?search={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
+
+  const buildPageUrl = (page: number) => {
+    const p = new URLSearchParams();
+    if (page > 1) p.set("page", String(page));
+    if (searchQuery) p.set("search", searchQuery);
+    categoryIds.forEach((id) => p.append("category", id));
+    const q = p.toString();
+    return q ? `${siteUrl}/?${q}` : siteUrl + "/";
+  };
+  const prevUrl = currentPage > 1 ? buildPageUrl(currentPage - 1) : null;
+  const nextUrl =
+    currentPage < totalPages ? buildPageUrl(currentPage + 1) : null;
+
   return (
     <>
-      <StructuredData />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <PaginationLinks prevUrl={prevUrl} nextUrl={nextUrl} />
       <div className="min-h-screen bg-background">
         <Header />
 
-        <main>
+        <main id="conteudo">
           {/* Hero Section */}
           <section
             className="border-b border-border/40 bg-gradient-to-b from-card to-background py-16 sm:py-20 lg:py-24"

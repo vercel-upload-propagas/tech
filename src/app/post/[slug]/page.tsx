@@ -5,14 +5,14 @@ import { notFound } from "next/navigation";
 
 import { getPostBySlugAction } from "@/actions/posts";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { FloatingBackButton } from "@/components/floating-back-button";
 import { Footer } from "@/components/footer";
+import { GoogleAdSlot } from "@/components/google-ad-slot";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { clientEnv } from "@/env";
-
-// Tornar a página dinâmica para evitar erros durante o build
-export const dynamic = "force-dynamic";
+import { formatPostDate } from "@/lib/format-date";
 
 interface PostPageProps {
   params: Promise<{ slug: string }>;
@@ -21,105 +21,119 @@ interface PostPageProps {
 export async function generateMetadata({
   params,
 }: PostPageProps): Promise<Metadata> {
-  try {
-    const { slug } = await params;
-    const { post } = await getPostBySlugAction(slug);
+  const { slug } = await params;
+  const { post } = await getPostBySlugAction(slug);
 
-    if (!post) {
-      return {
-        title: "Post não encontrado",
-      };
-    }
+  if (!post) {
+    return { title: "Post não encontrado" };
+  }
 
-    const url = `${clientEnv.NEXT_PUBLIC_SITE_URL}/post/${slug}`;
-
-    return {
+  const url = `${clientEnv.NEXT_PUBLIC_SITE_URL}/post/${slug}`;
+  return {
+    title: post.title,
+    description: post.description,
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true },
+    },
+    openGraph: {
       title: post.title,
       description: post.description,
-      openGraph: {
-        title: post.title,
-        description: post.description,
-        url,
-        type: "article",
-        publishedTime: post.createdAt,
-        images: [
-          {
-            url: post.coverImage,
-            width: 1200,
-            height: 630,
-            alt: post.title,
-          },
-        ],
-      },
-      twitter: {
-        card: "summary_large_image",
-        title: post.title,
-        description: post.description,
-        images: [post.coverImage],
-      },
-      alternates: {
-        canonical: url,
-      },
-    };
-  } catch (error) {
-    console.error("Erro ao gerar metadados:", error);
-    // Retornar metadados básicos em caso de erro
-    return {
-      title: "Erro ao carregar post",
-      description: "Ocorreu um erro ao carregar o post",
-    };
-  }
+      url,
+      type: "article",
+      publishedTime: post.createdAt,
+      modifiedTime: post.updatedAt,
+      images: [
+        { url: post.coverImage, width: 1200, height: 630, alt: post.title },
+      ],
+      locale: "pt_BR",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.description,
+      images: [post.coverImage],
+    },
+    alternates: { canonical: url },
+  };
 }
 
 export default async function PostPage({ params }: PostPageProps) {
   const { slug } = await params;
   const { post } = await getPostBySlugAction(slug);
 
-  if (!post) {
-    notFound();
-  }
+  if (!post) notFound();
 
-  const url = `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/post/${slug}`;
-
-  const jsonLd = {
+  const siteUrl = clientEnv.NEXT_PUBLIC_SITE_URL;
+  const url = `${siteUrl}/post/${slug}`;
+  const articleLd = {
     "@context": "https://schema.org",
     "@type": "Article",
+    "@id": `${url}#article`,
     headline: post.title,
     description: post.description,
-    image: post.coverImage,
+    image: {
+      "@type": "ImageObject",
+      url: post.coverImage,
+      width: 1200,
+      height: 630,
+    },
     datePublished: post.createdAt,
+    dateModified: post.updatedAt,
+    inLanguage: "pt-BR",
     author: {
       "@type": "Organization",
       name: "Tech Blog",
+      url: siteUrl,
     },
     publisher: {
       "@type": "Organization",
       name: "Tech Blog",
+      url: siteUrl,
+      logo: {
+        "@type": "ImageObject",
+        url: `${siteUrl}/favicon.svg`,
+      },
     },
     mainEntityOfPage: {
       "@type": "WebPage",
       "@id": url,
     },
   };
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: siteUrl },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: post.title,
+        item: url,
+      },
+    ],
+  };
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
       <div className="min-h-screen bg-background">
         <Header />
-
-        <main>
+        <main id="conteudo">
           <article className="py-12 sm:py-16 lg:py-20">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
               <div className="mx-auto max-w-4xl">
                 <Breadcrumbs
                   items={[{ label: "Home", href: "/" }, { label: post.title }]}
                 />
-
-                {/* Botão Voltar */}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -129,8 +143,6 @@ export default async function PostPage({ params }: PostPageProps) {
                 >
                   <Link href="/">← Voltar</Link>
                 </Button>
-
-                {/* Imagem de Capa */}
                 <div className="relative mb-8 h-64 w-full overflow-hidden rounded-lg bg-muted shadow-lg sm:h-96">
                   <Image
                     src={post.coverImage}
@@ -141,8 +153,14 @@ export default async function PostPage({ params }: PostPageProps) {
                     priority
                   />
                 </div>
-
-                {/* Conteúdo do Post */}
+                {clientEnv.NEXT_PUBLIC_ADSENSE_CLIENT_ID &&
+                  clientEnv.NEXT_PUBLIC_ADSENSE_SLOT && (
+                    <GoogleAdSlot
+                      clientId={clientEnv.NEXT_PUBLIC_ADSENSE_CLIENT_ID}
+                      slot={clientEnv.NEXT_PUBLIC_ADSENSE_SLOT}
+                      className="my-6"
+                    />
+                  )}
                 <Card className="shadow-lg">
                   <CardHeader>
                     <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
@@ -159,7 +177,7 @@ export default async function PostPage({ params }: PostPageProps) {
                       >
                         •
                       </span>
-                      <time dateTime={post.createdAt}>{post.createdAt}</time>
+                      <time dateTime={post.createdAt}>{formatPostDate(post.createdAt)}</time>
                     </div>
                     <h1 className="text-3xl font-bold tracking-tight text-card-foreground sm:text-4xl lg:text-5xl">
                       {post.title}
@@ -177,11 +195,20 @@ export default async function PostPage({ params }: PostPageProps) {
                     />
                   </CardContent>
                 </Card>
+                {clientEnv.NEXT_PUBLIC_ADSENSE_CLIENT_ID &&
+                  clientEnv.NEXT_PUBLIC_ADSENSE_SLOT && (
+                    <GoogleAdSlot
+                      clientId={clientEnv.NEXT_PUBLIC_ADSENSE_CLIENT_ID}
+                      slot={clientEnv.NEXT_PUBLIC_ADSENSE_SLOT}
+                      className="mt-8"
+                    />
+                  )}
               </div>
             </div>
           </article>
         </main>
 
+        <FloatingBackButton />
         <Footer />
       </div>
     </>

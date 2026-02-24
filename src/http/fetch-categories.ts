@@ -3,6 +3,7 @@ import type {
   FetchCategoriesRequest,
   FetchCategoriesResponse,
 } from "@/interfaces/http/category";
+import { CACHE } from "@/lib/cache-config";
 import { requestDelay } from "@/lib/delay";
 
 function buildCategoriesUrl(params: Partial<FetchCategoriesRequest> = {}): URL {
@@ -25,7 +26,12 @@ export async function fetchCategories(
 ): Promise<FetchCategoriesResponse> {
   await requestDelay();
   const url = buildCategoriesUrl(params);
-  const response = await fetch(url.toString());
+  const response = await fetch(url.toString(), {
+    next: {
+      revalidate: CACHE.revalidateHome,
+      tags: [CACHE.tags.categories],
+    },
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to fetch categories: ${response.status}`);

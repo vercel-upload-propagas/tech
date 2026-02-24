@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { formatPostDate } from "@/lib/format-date";
 import {
   Card,
   CardDescription,
@@ -51,12 +52,12 @@ export function PostCard({
           <div className="mb-2 flex items-center gap-3 text-xs text-muted-foreground">
             <time dateTime={date} className="flex items-center gap-1">
               <span aria-hidden="true">⏱</span>
-              <span>{readTime / 60}m</span>
+              <span>{Math.round(readTime)} min</span>
             </time>
             <span aria-hidden="true" className="text-muted-foreground/50">
               •
             </span>
-            <time dateTime={date}>{date}</time>
+            <time dateTime={date}>{formatPostDate(date)}</time>
           </div>
           {categories.length > 0 && (
             <div className="mb-2 flex flex-wrap gap-1">

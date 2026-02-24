@@ -1,26 +1,39 @@
-export function Footer() {
-  const currentYear = new Date().getFullYear();
+const CURRENT_YEAR = new Date().getFullYear();
 
+const footerLinks = [
+  { href: "/sobre", label: "Sobre" },
+  { href: "/privacidade", label: "Política de Privacidade" },
+  { href: "/cookies", label: "Política de Cookies" },
+  { href: "/termos", label: "Termos de Uso" },
+  { href: "/contato", label: "Contato" },
+] as const;
+
+export function Footer() {
   return (
     <footer
-      id="sobre"
       className="border-t border-border/40 bg-card py-12"
       role="contentinfo"
+      aria-label="Rodapé do site"
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="mb-4 text-lg font-semibold text-card-foreground">
-            Sobre
-          </h2>
-          <p className="text-sm leading-6 text-muted-foreground">
-            Tech Blog é seu guia completo para aprender e dominar tecnologias.
-            Oferecemos tutoriais práticos e passo a passo para resolver
-            problemas do dia a dia relacionados a tecnologia, aplicativos e
-            ferramentas digitais.
+        <div className="mx-auto max-w-2xl">
+          <nav
+            className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm"
+            aria-label="Links institucionais"
+          >
+            {footerLinks.map(({ href, label }) => (
+              <a
+                key={href}
+                href={href}
+                className="text-muted-foreground underline underline-offset-4 outline-none transition-colors hover:text-foreground focus:rounded focus:ring-2 focus:ring-primary"
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            © {CURRENT_YEAR} Tech Blog. Todos os direitos reservados.
           </p>
-          <div className="mt-8 border-t border-border/40 pt-8 text-center text-sm text-muted-foreground">
-            <p>© {currentYear} Tech Blog. Todos os direitos reservados.</p>
-          </div>
         </div>
       </div>
     </footer>

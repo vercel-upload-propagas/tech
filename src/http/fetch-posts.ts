@@ -3,6 +3,7 @@ import type {
   FetchPostsRequest,
   FetchPostsResponse,
 } from "@/interfaces/http/post";
+import { CACHE } from "@/lib/cache-config";
 import { requestDelay } from "@/lib/delay";
 
 function buildPostsUrl(params: Partial<FetchPostsRequest> = {}): URL {
@@ -28,7 +29,12 @@ export async function fetchPosts(
 ): Promise<FetchPostsResponse> {
   await requestDelay();
   const url = buildPostsUrl(params);
-  const response = await fetch(url.toString());
+  const response = await fetch(url.toString(), {
+    next: {
+      revalidate: CACHE.revalidateHome,
+      tags: [CACHE.tags.posts],
+    },
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to fetch posts: ${response.status}`);
