@@ -1,13 +1,20 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 
-import { getCategories, getPosts } from "@/actions/posts";
+import { getCategoriesAction } from "@/actions/categories";
+import { getPostsAction } from "@/actions/posts";
 import { CategoryFilter } from "@/components/category-filter";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
-import { PostsGrid } from "@/components/posts-grid";
+import { PostsSectionClient } from "@/components/posts-section-client";
 
 const POSTS_PER_PAGE = 12;
+
+function normalizeCategoryParam(
+  category: string | string[] | undefined
+): string[] {
+  if (category == null || category === "") return [];
+  return Array.isArray(category) ? category : [category];
+}
 
 export const metadata: Metadata = {
   title: "Home",
@@ -25,46 +32,11 @@ export const metadata: Metadata = {
 };
 
 interface HomeProps {
-  searchParams: Promise<{ page?: string; search?: string; category?: string }>;
-}
-
-async function PostsContent({
-  page,
-  search,
-  category,
-}: {
-  page: number;
-  search: string;
-  category: string;
-}) {
-  try {
-    const { posts, pagination } = await getPosts({
-      page,
-      limit: POSTS_PER_PAGE,
-      search,
-      category,
-    });
-
-    return (
-      <PostsGrid
-        posts={posts}
-        currentPage={pagination.page}
-        totalPages={pagination.totalPages}
-        searchQuery={search}
-      />
-    );
-  } catch (error) {
-    console.error("Erro ao carregar posts:", error);
-    // Retornar grid vazio em caso de erro
-    return (
-      <PostsGrid
-        posts={[]}
-        currentPage={1}
-        totalPages={0}
-        searchQuery={search}
-      />
-    );
-  }
+  searchParams: Promise<{
+    page?: string;
+    search?: string;
+    category?: string | string[];
+  }>;
 }
 
 function StructuredData() {
@@ -97,9 +69,23 @@ export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams;
   const currentPage = Number(params.page) || 1;
   const searchQuery = params.search || "";
-  const categoryFilter = params.category || "";
+  const categoryIds = normalizeCategoryParam(params.category);
 
-  const categories = await getCategories();
+  const [categories, initialPosts] = await Promise.all([
+    getCategoriesAction(),
+    getPostsAction({
+      page: currentPage,
+      itemsPerPage: POSTS_PER_PAGE,
+      search: searchQuery || undefined,
+      categoryIds: categoryIds.length ? categoryIds : undefined,
+    }),
+  ]);
+
+  const initialRequestKey = [
+    String(currentPage),
+    searchQuery,
+    [...categoryIds].sort().join(","),
+  ].join("|");
 
   return (
     <>
@@ -137,27 +123,12 @@ export default async function Home({ searchParams }: HomeProps) {
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
               <CategoryFilter
                 categories={categories}
-                selectedCategory={categoryFilter}
+                selectedCategoryIds={categoryIds}
               />
-              <Suspense
-                fallback={
-                  <div
-                    className="py-12 text-center"
-                    role="status"
-                    aria-live="polite"
-                  >
-                    <p className="text-lg text-muted-foreground">
-                      Carregando tutoriais...
-                    </p>
-                  </div>
-                }
-              >
-                <PostsContent
-                  page={currentPage}
-                  search={searchQuery}
-                  category={categoryFilter}
-                />
-              </Suspense>
+              <PostsSectionClient
+                initialData={initialPosts}
+                initialRequestKey={initialRequestKey}
+              />
             </div>
           </section>
         </main>

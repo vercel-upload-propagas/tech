@@ -3,12 +3,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { getPostBySlug } from "@/actions/posts";
+import { getPostBySlugAction } from "@/actions/posts";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { clientEnv } from "@/env";
 
 // Tornar a página dinâmica para evitar erros durante o build
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ export async function generateMetadata({
 }: PostPageProps): Promise<Metadata> {
   try {
     const { slug } = await params;
-    const post = await getPostBySlug(slug);
+    const { post } = await getPostBySlugAction(slug);
 
     if (!post) {
       return {
@@ -30,7 +31,7 @@ export async function generateMetadata({
       };
     }
 
-    const url = `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/post/${slug}`;
+    const url = `${clientEnv.NEXT_PUBLIC_SITE_URL}/post/${slug}`;
 
     return {
       title: post.title,
@@ -40,10 +41,10 @@ export async function generateMetadata({
         description: post.description,
         url,
         type: "article",
-        publishedTime: post.date,
+        publishedTime: post.createdAt,
         images: [
           {
-            url: post.image,
+            url: post.coverImage,
             width: 1200,
             height: 630,
             alt: post.title,
@@ -54,7 +55,7 @@ export async function generateMetadata({
         card: "summary_large_image",
         title: post.title,
         description: post.description,
-        images: [post.image],
+        images: [post.coverImage],
       },
       alternates: {
         canonical: url,
@@ -72,7 +73,7 @@ export async function generateMetadata({
 
 export default async function PostPage({ params }: PostPageProps) {
   const { slug } = await params;
-  const post = await getPostBySlug(slug);
+  const { post } = await getPostBySlugAction(slug);
 
   if (!post) {
     notFound();
@@ -85,8 +86,8 @@ export default async function PostPage({ params }: PostPageProps) {
     "@type": "Article",
     headline: post.title,
     description: post.description,
-    image: post.image,
-    datePublished: post.date,
+    image: post.coverImage,
+    datePublished: post.createdAt,
     author: {
       "@type": "Organization",
       name: "Tech Blog",
@@ -132,7 +133,7 @@ export default async function PostPage({ params }: PostPageProps) {
                 {/* Imagem de Capa */}
                 <div className="relative mb-8 h-64 w-full overflow-hidden rounded-lg bg-muted shadow-lg sm:h-96">
                   <Image
-                    src={post.image}
+                    src={post.coverImage}
                     alt={post.title}
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 896px"
@@ -146,11 +147,11 @@ export default async function PostPage({ params }: PostPageProps) {
                   <CardHeader>
                     <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                       <time
-                        dateTime={post.date}
+                        dateTime={post.createdAt}
                         className="flex items-center gap-1"
                       >
                         <span aria-hidden="true">⏱</span>
-                        <span>{post.readTime / 60}m</span>
+                        <span>{post.readTime} min</span>
                       </time>
                       <span
                         aria-hidden="true"
@@ -158,7 +159,7 @@ export default async function PostPage({ params }: PostPageProps) {
                       >
                         •
                       </span>
-                      <time dateTime={post.date}>{post.date}</time>
+                      <time dateTime={post.createdAt}>{post.createdAt}</time>
                     </div>
                     <h1 className="text-3xl font-bold tracking-tight text-card-foreground sm:text-4xl lg:text-5xl">
                       {post.title}
