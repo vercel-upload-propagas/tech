@@ -15,7 +15,7 @@ async function getPostBySlugImpl(slug: string): Promise<GetPostByIdResponse> {
   const url = new URL(
     `${clientEnv.NEXT_PUBLIC_API_URL}/posts/slug/${encodeURIComponent(slug)}`
   );
-  url.searchParams.set("websiteId", clientEnv.WEBSITE_ID);
+  url.searchParams.set("websiteId", clientEnv.NEXT_PUBLIC_WEBSITE_ID);
   const response = await fetch(url.toString(), {
     next: {
       revalidate: CACHE.revalidatePosts,

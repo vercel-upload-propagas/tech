@@ -7,7 +7,7 @@ import { CACHE } from "@/lib/cache-config";
 import { requestDelay } from "@/lib/delay";
 
 function buildPostsUrl(params: Partial<FetchPostsRequest> = {}): URL {
-  const websiteId = params.websiteId ?? clientEnv.WEBSITE_ID;
+  const websiteId = params.websiteId ?? clientEnv.NEXT_PUBLIC_WEBSITE_ID;
   const url = new URL(`${clientEnv.NEXT_PUBLIC_API_URL}/posts`);
   url.searchParams.set("websiteId", websiteId);
   if (params.page != null) url.searchParams.set("page", String(params.page));
