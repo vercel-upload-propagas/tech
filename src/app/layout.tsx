@@ -129,6 +129,12 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="referrer" content="strict-origin-when-cross-origin" />
+        {process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && (
+          <Script
+            src="https://www.google.com/recaptcha/api.js"
+            strategy="afterInteractive"
+          />
+        )}
       </head>
       <body
         className={`${inter.variable} font-sans antialiased`}

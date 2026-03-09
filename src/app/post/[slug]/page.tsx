@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { getPostBySlugAction } from "@/actions/posts";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { FloatingBackButton } from "@/components/floating-back-button";
+import { CommentsSection } from "@/components/comments-section";
 import { Footer } from "@/components/footer";
 import { GoogleAdSlot } from "@/components/google-ad-slot";
 import { Header } from "@/components/header";
@@ -195,6 +196,7 @@ export default async function PostPage({ params }: PostPageProps) {
                     />
                   </CardContent>
                 </Card>
+                <CommentsSection slug={slug} />
                 {clientEnv.NEXT_PUBLIC_ADSENSE_CLIENT_ID &&
                   clientEnv.NEXT_PUBLIC_ADSENSE_SLOT && (
                     <GoogleAdSlot
