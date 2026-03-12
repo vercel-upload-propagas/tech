@@ -2,11 +2,13 @@ import { clientEnv } from "@/env";
 
 export async function GET() {
   const baseUrl = clientEnv.NEXT_PUBLIC_SITE_URL;
+  const lastmod = new Date().toISOString();
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap>
     <loc>${baseUrl}/sitemap.xml</loc>
+    <lastmod>${lastmod}</lastmod>
   </sitemap>
 </sitemapindex>`;
 
